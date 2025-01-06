@@ -19,18 +19,15 @@ public class UserService {
 
     public String createUser(SignupRequest request) {
         // Check if email or userId already exists
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+        if (userRepository.findByEmailId(request.getEmail()).isPresent()) {
             throw new RuntimeException("Email already exists");
-        }
-        if (userRepository.findByUserId(request.getUserName()).isPresent()) {
-            throw new RuntimeException("UserID already exists");
         }
 
         // Create new user entity
         User user = new User();
-        user.setEmail(request.getEmail());
-        user.setUserId(request.getUserName());
-        user.setPhone(request.getPhone());
+        user.setEmailId(request.getEmail());
+        user.setUsername(request.getUserName());
+        user.setPhoneNumber(request.getPhone());
         user.setAddress(request.getAddress());
         user.setPincode(request.getPincode());
 

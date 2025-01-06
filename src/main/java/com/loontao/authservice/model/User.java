@@ -1,8 +1,5 @@
 package com.loontao.authservice.model;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -10,25 +7,27 @@ import lombok.Data;
 @Entity
 @Table(name = "users")
 public class User {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "user_id")
+    private Long userId;
 
-    @Column(nullable = false, unique = true)
-    private String email;
+    @Column(nullable = false, unique = true, name = "username")
+    private String username;
 
-    @Column(nullable = false, unique = true)
-    private String userId;
+    @Column(nullable = false, name = "password")
+    private String password;
 
-    @Column(nullable = false)
-    private String phone;
-
-    @Column(nullable = false)
+    @Column(nullable = false, name = "address")
     private String address;
 
-    @Column(nullable = false)
-    private String pincode;
+    @Column(nullable = false, unique = true, name = "email_id")
+    private String emailId; // Ensure this matches the property name in UserRepository
 
-    @Column(nullable = false)
-    private String password;
+    @Column(nullable = false, name = "phone_number")
+    private String phoneNumber;
+
+    @Column(nullable = false, name = "pincode")
+    private String pincode;
 }
