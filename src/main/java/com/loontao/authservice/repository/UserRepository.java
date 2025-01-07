@@ -1,10 +1,11 @@
 package com.loontao.authservice.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import com.loontao.authservice.model.User;
+
+import com.loontao.authservice.entity.User;
+
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
-    Optional<User> findByEmail(String email);
-    Optional<User> findByUserId(String userId);
+    Optional<User> findByEmailId(String emailId); // Ensure this matches the property name in User entity
 }

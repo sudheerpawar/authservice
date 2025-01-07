@@ -1,45 +1,49 @@
 package com.loontao.authservice.service;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import com.loontao.authservice.dto.SignupRequest;
-import com.loontao.authservice.model.User;
+
+import com.loontao.authservice.dto.RegisterUserDto;
+import com.loontao.authservice.entity.Role;
+import com.loontao.authservice.entity.RoleEnum;
+import com.loontao.authservice.entity.User;
+import com.loontao.authservice.repository.RoleRepository;
 import com.loontao.authservice.repository.UserRepository;
 
 @Service
 public class UserService {
-
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final RoleRepository roleRepository;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, RoleRepository roleRepository) {
         this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
-    public String createUser(SignupRequest request) {
-        // Check if email or userId already exists
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new RuntimeException("Email already exists");
+    public List<User> allUsers() {
+        List<User> users = new ArrayList<>();
+        userRepository.findAll().forEach(users::add);
+        return users;
+    }
+    
+    public User createAdministrator(RegisterUserDto input) {
+        Optional<Role> optionalRole = roleRepository.findByName(RoleEnum.ADMIN);
+        if (optionalRole.isEmpty()) {
+            return null;
         }
-        if (userRepository.findByUserId(request.getUserName()).isPresent()) {
-            throw new RuntimeException("UserID already exists");
-        }
 
-        // Create new user entity
-        User user = new User();
-        user.setEmail(request.getEmail());
-        user.setUserId(request.getUserName());
-        user.setPhone(request.getPhone());
-        user.setAddress(request.getAddress());
-        user.setPincode(request.getPincode());
+        var user = new User()
+                .setFullname(input.getFullname())
+                .setEmailId(input.getEmailId())
+                .setPassword(passwordEncoder.encode(input.getPassword()))
+                .setRole(optionalRole.get());
 
-        // Hash the password
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-
-        // Save the user
-        userRepository.save(user);
-
-        return "User created successfully";
+        return userRepository.save(user);
     }
 }

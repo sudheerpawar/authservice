@@ -1,74 +1,45 @@
 package com.loontao.authservice.controller;
 
-import com.loontao.authservice.dto.LoginRequest;
-import com.loontao.authservice.dto.SignupRequest;
-import com.loontao.authservice.service.UserService;
-import com.loontao.authservice.util.JwtUtil;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.validation.Valid;
+import com.loontao.authservice.dto.LoginResponse;
+import com.loontao.authservice.dto.LoginUserDto;
+import com.loontao.authservice.dto.RegisterUserDto;
+import com.loontao.authservice.entity.User;
+import com.loontao.authservice.service.AuthenticationService;
+import com.loontao.authservice.service.JwtService;
 
+@RequestMapping("/auth")
 @RestController
-@RequestMapping("/api/auth")
 public class AuthController {
-    private final UserService userService;
-    private final JwtUtil jwtUtil;
-    private final AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
+    
+    private final AuthenticationService authenticationService;
 
-    public AuthController(UserService userService, JwtUtil jwtUtil, AuthenticationManager authenticationManager) {
-        this.userService = userService;
-        this.jwtUtil = jwtUtil;
-        this.authenticationManager = authenticationManager;
+    public AuthController(JwtService jwtService, AuthenticationService authenticationService) {
+        this.jwtService = jwtService;
+        this.authenticationService = authenticationService;
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<?> signup(@Valid @RequestBody SignupRequest request,
-                                     @RequestHeader(value = "Authorization", required = true) String token) {
-        // Validate the token
-        token = token.startsWith("Bearer ") ? token.substring(7) : token;
-        if (!jwtUtil.validateToken(token)) {
-            System.out.println("Invalid or expired token : " + token);
-            return ResponseEntity.status(403).body("Invalid or expired token");
-        }
+    public ResponseEntity<User> register(@RequestBody RegisterUserDto registerUserDto) {
+        User registeredUser = authenticationService.signup(registerUserDto);
 
-        // Optionally, extract and verify the claim (e.g., ensure the token is for signup)
-        String claim = jwtUtil.extractClaim(token);
-        if (!"loontao".equals(claim)) {
-            System.out.println("Token is not authorized for this operation : " + token);
-            return ResponseEntity.status(403).body("Token is not authorized for this operation");
-        }
-
-        // Proceed with user registration
-        String response = userService.createUser(request);
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/generate-signup-token")
-    public ResponseEntity<?> generateSignupToken() {
-    String token = jwtUtil.generateToken();
-    return ResponseEntity.ok(token);
+        return ResponseEntity.ok(registeredUser);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
-        // Authenticate the user
-        Authentication authentication = authenticationManager.authenticate(
-            new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword())
-        );
-    
-        // Extract username from the authentication object
-        String authenticatedUsername = authentication.getName();
-    
-        // Generate a JWT token
-        String token = jwtUtil.generateTokenUserName(authenticatedUsername);
-    
-        // Return the token in the response
-        return ResponseEntity.ok("Bearer " + token);
+    public ResponseEntity<LoginResponse> authenticate(@RequestBody LoginUserDto loginUserDto) {
+        User authenticatedUser = authenticationService.authenticate(loginUserDto);
+
+        String jwtToken = jwtService.generateToken(authenticatedUser);
+
+        LoginResponse loginResponse = new LoginResponse().setToken(jwtToken).setExpiresIn(jwtService.getExpirationTime());
+
+        return ResponseEntity.ok(loginResponse);
     }
 }
-
-
