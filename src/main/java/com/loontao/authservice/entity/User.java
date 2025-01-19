@@ -14,34 +14,44 @@ import jakarta.persistence.*;
 @Table(name = "users")
 public class User implements UserDetails {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(nullable = false, name = "user_id")
-    private Long userId;
+    // @Id
+    // @GeneratedValue(strategy = GenerationType.AUTO)
+    // @Column(nullable = false, name = "user_id")
+    // private Long userId;
 
-    @Column(nullable = false, unique = true, name = "fullname")
+    @Column(nullable = true, name = "fullname")
     private String fullname;
 
-    @Column(nullable = false, name = "password")
+    @Column(nullable = true, name = "first_name")
+    private String firstName;
+
+    @Column(nullable = true, name = "last_name")
+    private String lastName;
+
+    @Column(nullable = true, name = "password")
     private String password;
 
-    @Column(nullable = false, name = "address")
+    @Column(nullable = true, name = "address")
     private String address;
 
-    @Column(nullable = false, name = "city")
+    @Column(nullable = true, name = "city")
     private String city;
 
-    @Column(nullable = false, name = "country")
+    @Column(nullable = true, name = "country")
     private String country;
 
     @Column(nullable = false, unique = true, name = "email_id")
     private String emailId;
 
+    @Id
     @Column(nullable = false, name = "phone_number")
     private String phoneNumber;
 
-    @Column(nullable = false, name = "pincode")
+    @Column(nullable = true, name = "pincode")
     private String pincode;
+
+    @Column(nullable = true, name = "date_of_birth")
+    private String dateOfBirth;
 
     @CreationTimestamp
     @Column(updatable = false, name = "created_at")
@@ -57,14 +67,58 @@ public class User implements UserDetails {
     return List.of(authority);
     }
     
-    @Override
     public String getPassword() {
         return password;
     }
 
-    @Override
+
     public String getUsername() {
         return emailId;
+    }
+
+    
+    public String getFullname() {
+        return fullname;
+    }
+
+    public String getPhoneNumber()
+    {
+        return phoneNumber;
+    }
+
+    public String getDob()
+    {
+        return dateOfBirth;
+    }
+
+    public String getPincode()
+    {
+        return pincode;
+    }
+
+    public String getCountry()
+    {
+        return country;
+    }
+
+    public String getCity()
+    {
+        return city;
+    }
+
+    public String getAddress()
+    {
+        return address;
+    }
+
+    public String getLastName()
+    {
+        return lastName;
+    }
+
+    public String getFirstName()
+    {
+        return firstName;
     }
 
     @Override
@@ -125,6 +179,21 @@ public User setPhoneNumber(String phoneNumber) {
 
 public User setPincode(String pincode) {
     this.pincode = pincode;
+    return this;
+}
+
+public User setDob(String dateOfBirth) {
+    this.dateOfBirth = dateOfBirth;
+    return this;
+}
+
+public User setFirstName(String firstName) {
+    this.firstName = firstName;
+    return this;
+}
+
+public User setLastName(String lastName) {
+    this.lastName = lastName;
     return this;
 }
 

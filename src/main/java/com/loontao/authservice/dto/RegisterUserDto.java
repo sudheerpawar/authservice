@@ -21,6 +21,12 @@ public class RegisterUserDto {
     private String phoneNumber;
 
     private String pincode;
+
+    private String dateOfBirth;
+
+    private String firstName; 
+
+    private String lastName;
  
     // getters and setters here...
 }

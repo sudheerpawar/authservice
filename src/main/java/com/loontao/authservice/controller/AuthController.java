@@ -1,9 +1,12 @@
 package com.loontao.authservice.controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.loontao.authservice.dto.LoginResponse;
@@ -12,28 +15,52 @@ import com.loontao.authservice.dto.RegisterUserDto;
 import com.loontao.authservice.entity.User;
 import com.loontao.authservice.service.AuthenticationService;
 import com.loontao.authservice.service.JwtService;
+import com.loontao.authservice.service.UserService;
+
 
 @RequestMapping("/auth")
 @RestController
 public class AuthController {
-    private final JwtService jwtService;
-    
-    private final AuthenticationService authenticationService;
 
-    public AuthController(JwtService jwtService, AuthenticationService authenticationService) {
+    @Autowired
+    private final JwtService jwtService;
+    @Autowired
+    private final AuthenticationService authenticationService;
+    @Autowired
+    private final UserService userService;
+
+    public AuthController(JwtService jwtService, AuthenticationService authenticationService, UserService userService) {
         this.jwtService = jwtService;
         this.authenticationService = authenticationService;
+        this.userService = userService;
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<User> register(@RequestBody RegisterUserDto registerUserDto) {
-        User registeredUser = authenticationService.signup(registerUserDto);
+    public ResponseEntity<?> register(@RequestBody RegisterUserDto registerUserDto) {
+        // Sign up the user
+        User registeredUser;
+        try {
+            registeredUser = authenticationService.signup(registerUserDto);
 
-        return ResponseEntity.ok(registeredUser);
+            // Check if registration is successful
+            if (registeredUser != null && registeredUser.getPhoneNumber() != null) {
+                // Trigger the webhook
+                userService.triggerWebhook(registeredUser.getPhoneNumber());
+                return ResponseEntity.ok(registeredUser);
+            } else if (registeredUser == null)
+            {
+                return ResponseEntity.status(500).body("User phone number " + registerUserDto.getPhoneNumber() +  " already exists. Please Login or try with other phone number.");
+            } else {
+                return ResponseEntity.badRequest().body("User registration failed. Please try again.");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("An error occurred during registration: " + e.getMessage());
+        }
     }
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> authenticate(@RequestBody LoginUserDto loginUserDto) {
+
         User authenticatedUser = authenticationService.authenticate(loginUserDto);
 
         String jwtToken = jwtService.generateToken(authenticatedUser);
@@ -42,4 +69,22 @@ public class AuthController {
 
         return ResponseEntity.ok(loginResponse);
     }
+
+     @GetMapping("/getUserFromPhone")
+    public ResponseEntity<?> getUserFromPhone(@RequestParam String phoneNumber) {
+
+        // Validate the phone number
+        if (phoneNumber == null || phoneNumber.isEmpty()) {
+            return ResponseEntity.badRequest().body("Phone number is required and cannot be empty.");
+        }
+
+        // Fetch user from service
+        User user = userService.getCustomerFromPhone(phoneNumber);
+        if (user == null) {
+            return ResponseEntity.status(404).body("User not found for phone number: " + phoneNumber);
+        } else {
+            return ResponseEntity.ok(user);
+        }
+    }
+
 }

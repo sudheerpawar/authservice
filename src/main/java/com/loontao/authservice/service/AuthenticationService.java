@@ -43,6 +43,12 @@ public class AuthenticationService {
             return null;
         }
           
+        Optional<User> phoneExists = userRepository.findByPhoneNumber(input.getPhoneNumber());
+        if (phoneExists.isPresent())
+        {
+            return null;
+        }
+
         User user = new User()
                 .setFullname(input.getFullname())
                 .setEmailId(input.getEmailId())
@@ -52,21 +58,49 @@ public class AuthenticationService {
                 .setCountry(input.getCountry())
                 .setPhoneNumber(input.getPhoneNumber())
                 .setPincode(input.getPincode())
+                .setDob(input.getDateOfBirth())
+                .setFirstName(input.getFirstName())
+                .setLastName(input.getLastName())
                 .setRole(optionalRole.get());
+                
 
         return userRepository.save(user);
     }
 
     public User authenticate(LoginUserDto input) {
-        authenticationManager.authenticate(
+
+        if (input.getEmailId()!=null)
+        {
+            authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         input.getEmailId(),
                         input.getPassword()
                 )
+                
         );
-
         return userRepository.findByEmailId(input.getEmailId())
                 .orElseThrow();
+        } else if (input.getPhoneNumber()!=null)
+        {
+            authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        input.getPhoneNumber(),
+                        input.getPassword()
+                )
+        );
+        return userRepository.findByPhoneNumber(input.getPhoneNumber())
+                .orElseThrow();
+        } else if (input.getFullname()!=null)
+        {
+            authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        input.getFullname(),
+                        input.getPassword()
+                )
+        );
+        return userRepository.findByFullname(input.getFullname())
+                .orElseThrow();
+        } else return null;
     }
 }
 

@@ -53,4 +53,7 @@ public class GlobalExceptionHandler {
 
         return errorDetail;
     }
+
+
+    
 }

@@ -41,14 +41,16 @@ public class AdminSeeder implements ApplicationListener<ContextRefreshedEvent> {
 
     private void createSuperAdministrator() {
         RegisterUserDto userDto = new RegisterUserDto();
-        userDto.setFullname("Super Admin");
+        userDto.setFullname("SuperAdmin");
         userDto.setEmailId("super.admin@email.com");
         userDto.setPassword("123456");
         userDto.setAddress("Address");
         userDto.setCity("City");
         userDto.setCountry("Country");
-        userDto.setPhoneNumber("8888888888");
-        userDto.setPincode("88888");
+        userDto.setPhoneNumber("1111111111");
+        userDto.setPincode("11111");
+        userDto.setFirstName("Super");
+        userDto.setLastName("Admin");
 
         Optional<Role> optionalRole = roleRepository.findByName(RoleEnum.SUPER_ADMIN);
         Optional<User> optionalUser = userRepository.findByEmailId(userDto.getEmailId());
@@ -66,7 +68,9 @@ public class AdminSeeder implements ApplicationListener<ContextRefreshedEvent> {
             .setCity(userDto.getCity())
             .setCountry(userDto.getCountry())
             .setPhoneNumber(userDto.getPhoneNumber())
-            .setPincode(userDto.getPincode());
+            .setPincode(userDto.getPincode())
+            .setFirstName(userDto.getFirstName())
+            .setLastName(userDto.getLastName());
 
         userRepository.save(user);
     }

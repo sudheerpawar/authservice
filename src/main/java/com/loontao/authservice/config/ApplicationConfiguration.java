@@ -9,6 +9,7 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.web.client.RestTemplate;
 
 import com.loontao.authservice.repository.UserRepository;
 
@@ -23,8 +24,8 @@ public class ApplicationConfiguration {
 
     @Bean
     UserDetailsService userDetailsService() {
-        return username -> userRepository.findByEmailId(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        return loginField -> userRepository.findByEmailIdOrPhoneNumberOrFullname(loginField, loginField, loginField)
+        .orElseThrow(() -> new UsernameNotFoundException("User not found with login field: " + loginField));
     }
 
     @Bean
@@ -45,6 +46,11 @@ public class ApplicationConfiguration {
         authProvider.setPasswordEncoder(passwordEncoder());
 
         return authProvider;
+    }
+
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
     }
 }
 
