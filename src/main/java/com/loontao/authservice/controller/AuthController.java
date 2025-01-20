@@ -39,11 +39,14 @@ public class AuthController {
     public ResponseEntity<?> register(@RequestBody RegisterUserDto registerUserDto) {
         // Sign up the user
         User registeredUser;
+        // user phone number is mandatory for sign up
+        if (registerUserDto == null || registerUserDto.getPhoneNumber() == null || registerUserDto.getPhoneNumber().isEmpty()) {
+            return ResponseEntity.badRequest().body("User details are required. Phone number is mandatory for sign up.");
+        }
         try {
             registeredUser = authenticationService.signup(registerUserDto);
-
             // Check if registration is successful
-            if (registeredUser != null && registeredUser.getPhoneNumber() != null) {
+            if (registeredUser != null && (registeredUser.getPhoneNumber() != null || !registeredUser.getPhoneNumber().isEmpty())) {
                 // Trigger the webhook
                 userService.triggerWebhook(registeredUser.getPhoneNumber());
                 return ResponseEntity.ok(registeredUser);
@@ -86,5 +89,6 @@ public class AuthController {
             return ResponseEntity.ok(user);
         }
     }
+    
 
 }
