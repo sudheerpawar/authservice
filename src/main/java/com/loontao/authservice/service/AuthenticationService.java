@@ -49,6 +49,13 @@ public class AuthenticationService {
             return null;
         }
 
+        Optional<User> emailExists = userRepository.findByEmailId(input.getEmailId());
+        if (emailExists.isPresent())
+        {
+            return null;
+        }
+
+
         User user = new User()
                 .setFullname(input.getFullname())
                 .setEmailId(input.getEmailId())
@@ -90,15 +97,15 @@ public class AuthenticationService {
         );
         return userRepository.findByPhoneNumber(input.getPhoneNumber())
                 .orElseThrow();
-        } else if (input.getFullname()!=null)
+        } else if (input.getFirstName()!=null)
         {
             authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        input.getFullname(),
+                        input.getFirstName(),
                         input.getPassword()
                 )
         );
-        return userRepository.findByFullname(input.getFullname())
+        return userRepository.findByFirstName(input.getFirstName())
                 .orElseThrow();
         } else return null;
     }

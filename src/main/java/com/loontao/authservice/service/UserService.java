@@ -45,13 +45,21 @@ public class UserService {
             return null;
         }
 
-        var user = new User()
-                .setFullname(input.getFullname())
-                .setEmailId(input.getEmailId())
-                .setPassword(passwordEncoder.encode(input.getPassword()))
-                .setRole(optionalRole.get());
-
-        return userRepository.save(user);
+        User user = new User()
+        .setFullname(input.getFullname())
+        .setEmailId(input.getEmailId())
+        .setPassword(passwordEncoder.encode(input.getPassword()))
+        .setAddress(input.getAddress())
+        .setCity(input.getCity())
+        .setCountry(input.getCountry())
+        .setPhoneNumber(input.getPhoneNumber())
+        .setPincode(input.getPincode())
+        .setDob(input.getDateOfBirth())
+        .setFirstName(input.getFirstName())
+        .setLastName(input.getLastName())
+        .setRole(optionalRole.get());
+        
+    return userRepository.save(user);
     }
 
     public User getCustomerFromPhone(String phoneNumber) {
@@ -70,7 +78,6 @@ public class UserService {
 
         // Payload for the webhook
         WebhookPayload payload = new WebhookPayload("new_customer", phoneNumber);
-
         // Send POST request to the webhook URL
         try {
             restTemplate.postForEntity(webhookUrl, payload, String.class);
@@ -78,5 +85,14 @@ public class UserService {
         } catch (Exception e) {
             System.err.println("Failed to trigger webhook: " + e.getMessage());
         }
+    }
+
+    public boolean deleteUser(String phoneNumber) {
+        User authenticatedUser = userRepository.findByPhoneNumber(phoneNumber).orElse(null);
+        if (authenticatedUser == null) {
+            return false;
+        }
+        userRepository.delete(authenticatedUser);
+        return true;
     }
 }

@@ -7,7 +7,7 @@ public class LoginUserDto {
     
     private String emailId;
 
-    private String fullname;
+    private String firstName;
     
     private String password;
 

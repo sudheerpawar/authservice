@@ -61,6 +61,11 @@ public class User implements UserDetails {
     @Column(name = "updated_at")
     private Date updatedAt;
 
+    @ManyToOne
+    @JoinColumn(name = "role_id", referencedColumnName = "id", nullable = false)
+    private Role role;
+
+
    @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
     SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + role.getName().toString());    
@@ -196,10 +201,6 @@ public User setLastName(String lastName) {
     this.lastName = lastName;
     return this;
 }
-
-@ManyToOne(cascade = CascadeType.REMOVE)
-@JoinColumn(name = "role_id", referencedColumnName = "id", nullable = false)
-private Role role;
 
 public Role getRole() {
     return role;

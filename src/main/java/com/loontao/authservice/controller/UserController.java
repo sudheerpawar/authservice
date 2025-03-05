@@ -8,6 +8,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.loontao.authservice.entity.User;
@@ -41,5 +42,21 @@ public class UserController {
         return ResponseEntity.ok(users);
     }
 
+    @GetMapping("/getUserFromPhone")
+    public ResponseEntity<?> getUserFromPhone(@RequestParam String phoneNumber) {
+
+        // Validate the phone number
+        if (phoneNumber == null || phoneNumber.isEmpty()) {
+            return ResponseEntity.badRequest().body("Phone number is required and cannot be empty.");
+        }
+
+        // Fetch user from service
+        User user = userService.getCustomerFromPhone(phoneNumber);
+        if (user == null) {
+            return ResponseEntity.status(404).body("User not found for phone number: " + phoneNumber);
+        } else {
+            return ResponseEntity.ok(user);
+        }
+    }
     
 }

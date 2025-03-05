@@ -1,12 +1,12 @@
 package com.loontao.authservice.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.loontao.authservice.dto.LoginResponse;
@@ -16,11 +16,15 @@ import com.loontao.authservice.entity.User;
 import com.loontao.authservice.service.AuthenticationService;
 import com.loontao.authservice.service.JwtService;
 import com.loontao.authservice.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 @RequestMapping("/auth")
 @RestController
 public class AuthController {
+
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
     @Autowired
     private final JwtService jwtService;
@@ -47,13 +51,17 @@ public class AuthController {
             registeredUser = authenticationService.signup(registerUserDto);
             // Check if registration is successful
             if (registeredUser != null && (registeredUser.getPhoneNumber() != null || !registeredUser.getPhoneNumber().isEmpty())) {
+                logger.info("User registered successfully with phone number " + registerUserDto.getPhoneNumber());
+                logger.info("Triggering webhook for user phone number " + registerUserDto.getPhoneNumber());
                 // Trigger the webhook
                 userService.triggerWebhook(registeredUser.getPhoneNumber());
                 return ResponseEntity.ok(registeredUser);
             } else if (registeredUser == null)
             {
-                return ResponseEntity.status(500).body("User phone number " + registerUserDto.getPhoneNumber() +  " already exists. Please Login or try with other phone number.");
+                logger.error("User phone number " + registerUserDto.getPhoneNumber() +  " or " + registerUserDto.getEmailId() + " already exists. Please Login or try with other phone number or email Id.");
+                return ResponseEntity.status(500).body("User phone number " + registerUserDto.getPhoneNumber() +  " or " + registerUserDto.getEmailId() + " already exists. Please Login or try with other phone number or email Id.");
             } else {
+                logger.error("User registration failed. Please try again.");
                 return ResponseEntity.badRequest().body("User registration failed. Please try again.");
             }
         } catch (Exception e) {
@@ -62,33 +70,53 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> authenticate(@RequestBody LoginUserDto loginUserDto) {
-
-        User authenticatedUser = authenticationService.authenticate(loginUserDto);
-
-        String jwtToken = jwtService.generateToken(authenticatedUser);
-
-        LoginResponse loginResponse = new LoginResponse().setToken(jwtToken).setExpiresIn(jwtService.getExpirationTime());
-
-        return ResponseEntity.ok(loginResponse);
-    }
-
-     @GetMapping("/getUserFromPhone")
-    public ResponseEntity<?> getUserFromPhone(@RequestParam String phoneNumber) {
-
-        // Validate the phone number
-        if (phoneNumber == null || phoneNumber.isEmpty()) {
-            return ResponseEntity.badRequest().body("Phone number is required and cannot be empty.");
-        }
-
-        // Fetch user from service
-        User user = userService.getCustomerFromPhone(phoneNumber);
-        if (user == null) {
-            return ResponseEntity.status(404).body("User not found for phone number: " + phoneNumber);
-        } else {
-            return ResponseEntity.ok(user);
-        }
-    }
+    public ResponseEntity<?> authenticate(@RequestBody LoginUserDto loginUserDto) {
+        try {
+            User authenticatedUser = authenticationService.authenticate(loginUserDto);
     
+            if (authenticatedUser == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+            }
+    
+            if (!authenticatedUser.isEnabled()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("User account is disabled");
+            }
+    
+            String jwtToken = jwtService.generateToken(authenticatedUser);
+    
+            LoginResponse loginResponse = new LoginResponse()
+                    .setToken(jwtToken)
+                    .setExpiresIn(jwtService.getExpirationTime());
+    
+            return ResponseEntity.ok(loginResponse);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred during authentication");
+        }
+    }
+
+    @DeleteMapping("/delete/account")
+    public ResponseEntity<?> deleteAccount(@RequestBody LoginUserDto loginUserDto) {
+        try {
+            User authenticatedUser = authenticationService.authenticate(loginUserDto);
+    
+            if (authenticatedUser == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+            }
+    
+            if (!authenticatedUser.isEnabled()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("User account is disabled");
+            }
+    
+            boolean isDeleted = userService.deleteUser(authenticatedUser.getPhoneNumber());
+    
+            if (isDeleted) {
+                return ResponseEntity.ok("User account deleted successfully");
+            } else {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred during account deletion");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred during account deletion");
+        }
+    }
 
 }
